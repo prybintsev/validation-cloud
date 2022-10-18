@@ -4,3 +4,6 @@ CREATE TABLE IF NOT EXISTS user
     Username VARCHAR UNIQUE NOT NULL,
     PasswordHash VARCHAR NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS user_username
+ON user (Username);

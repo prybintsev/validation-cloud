@@ -1,3 +1,3 @@
 package main
 
-const DB_FILE = "DB_FILE"
+const JWT_SECRET_KEY = "JWT_SECRET_KEY"

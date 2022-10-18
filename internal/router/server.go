@@ -10,16 +10,19 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/prybintsev/validation_cloud/internal/api"
+	"github.com/prybintsev/validation_cloud/internal/auth"
 	"github.com/prybintsev/validation_cloud/internal/db/users"
 )
 
-func StartHttpServer(ctx context.Context, dbCon *sql.DB) error {
+func StartHttpServer(ctx context.Context, dbCon *sql.DB, secretKey string) error {
 	router := gin.Default()
 	authGroup := router.Group("auth")
 
 	usersRepo := users.NewUsersRepo(dbCon)
-	authHandler := api.NewAuthHandler(usersRepo)
+	authorizer := auth.NewAuth(secretKey)
+	authHandler := api.NewAuthHandler(usersRepo, authorizer)
 	authGroup.POST("/signup", authHandler.SignUp)
+	authGroup.POST("/generate-token", authHandler.GenerateToken)
 
 	srv := &http.Server{
 		Addr:    ":8080",

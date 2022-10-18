@@ -30,7 +30,11 @@ func main() {
 		log.WithError(err).Error("Authentication server has stopped unexpectedly")
 		return
 	}
-	err = router.StartHttpServer(ctx, dbCon)
+	secretKey := os.Getenv(JWT_SECRET_KEY)
+	if secretKey == "" {
+		log.Error("JWT_SECRET_KEY environment variable must be set")
+	}
+	err = router.StartHttpServer(ctx, dbCon, secretKey)
 	if err != nil {
 		log.WithError(err).Error("Authentication server has stopped unexpectedly")
 		return
