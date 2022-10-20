@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
-	"github.com/prybintsev/validation_cloud/internal/db"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -91,12 +90,24 @@ func (s Samples) InsertSample(ctx context.Context, height uint64, createdAt time
 	if err != nil {
 		return err
 	}
-	rowsAffected, err := res.RowsAffected()
+	_, err = res.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if rowsAffected == 0 {
-		return db.ErrorUserAlreadyExists
+	return nil
+}
+
+func (s Samples) DeleteOldSamples(ctx context.Context, deleteAfter time.Duration) error {
+	now := time.Now().UTC()
+	deleteTime := now.Add(-1 * deleteAfter)
+	res, err := s.db.ExecContext(ctx, "DELETE FROM sample WHERE CreatedAt < ?",
+		deleteTime)
+	if err != nil {
+		return err
+	}
+	_, err = res.RowsAffected()
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -22,6 +22,7 @@ type HeightSamplesCollector struct {
 
 type Repository interface {
 	InsertSample(ctx context.Context, height uint64, createdAt time.Time) error
+	DeleteOldSamples(ctx context.Context, deleteAfter time.Duration) error
 }
 
 func NewHeightSamplesCollector(frequency time.Duration, samplesRepo Repository) HeightSamplesCollector {
@@ -57,6 +58,13 @@ func (h HeightSamplesCollector) collectAndStoreSample(ctx context.Context) {
 	err = h.samplesRepo.InsertSample(ctx, height, now)
 	if err != nil {
 		log.WithError(err).Error("failed to insert sample to DB")
+		return
+	}
+
+	// Delete samples older than one hour
+	err = h.samplesRepo.DeleteOldSamples(ctx, time.Hour)
+	if err != nil {
+		log.WithError(err).Error("failed to delete old samples")
 		return
 	}
 }
