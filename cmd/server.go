@@ -33,6 +33,7 @@ func main() {
 	secretKey := os.Getenv(JWT_SECRET_KEY)
 	if secretKey == "" {
 		log.Error("JWT_SECRET_KEY environment variable must be set")
+		return
 	}
 
 	err = router.StartHttpServer(ctx, dbCon, secretKey)

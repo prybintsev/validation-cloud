@@ -18,7 +18,7 @@ The application includes a web server an a job that collects samples once a minu
 average growth rate, the application needs to run for one minute or more so at least 2 samples are collected.
 
 ```
-make run
+JWT_SECRET_KEY="my_secret_key" make run
 ```
 ## Examples
 
