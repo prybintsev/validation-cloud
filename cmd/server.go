@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/prybintsev/validation_cloud/internal/db/sqlite"
 	"os"
 	"os/signal"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/prybintsev/validation_cloud/internal/db/sqlite"
 	"github.com/prybintsev/validation_cloud/internal/router"
 )
 
@@ -34,6 +34,7 @@ func main() {
 	if secretKey == "" {
 		log.Error("JWT_SECRET_KEY environment variable must be set")
 	}
+
 	err = router.StartHttpServer(ctx, dbCon, secretKey)
 	if err != nil {
 		log.WithError(err).Error("Authentication server has stopped unexpectedly")

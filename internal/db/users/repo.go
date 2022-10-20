@@ -29,11 +29,11 @@ func (u *Users) CreateUser(ctx context.Context, userName, passwordHash string) e
 	if err != nil {
 		return err
 	}
-	rowsAffeccted, err := res.RowsAffected()
+	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if rowsAffeccted == 0 {
+	if rowsAffected == 0 {
 		return db.ErrorUserAlreadyExists
 	}
 	return nil

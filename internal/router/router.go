@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"database/sql"
+	"github.com/prybintsev/validation_cloud/internal/api/middleware"
 	"net/http"
 	"time"
 
@@ -11,7 +12,9 @@ import (
 
 	"github.com/prybintsev/validation_cloud/internal/api"
 	"github.com/prybintsev/validation_cloud/internal/auth"
+	"github.com/prybintsev/validation_cloud/internal/db/samples"
 	"github.com/prybintsev/validation_cloud/internal/db/users"
+	samplesJob "github.com/prybintsev/validation_cloud/internal/jobs/samples"
 )
 
 func StartHttpServer(ctx context.Context, dbCon *sql.DB, secretKey string) error {
@@ -21,8 +24,14 @@ func StartHttpServer(ctx context.Context, dbCon *sql.DB, secretKey string) error
 	usersRepo := users.NewUsersRepo(dbCon)
 	authorizer := auth.NewAuth(secretKey)
 	authHandler := api.NewAuthHandler(usersRepo, authorizer)
-	authGroup.POST("/signup", authHandler.SignUp)
-	authGroup.POST("/generate-token", authHandler.GenerateToken)
+	authGroup.POST("signup", authHandler.SignUp)
+	authGroup.POST("generate-token", authHandler.GenerateToken)
+
+	samplesRepo := samples.NewSamplesRepo(dbCon)
+	gethHandler := api.NewGethHandler(samplesRepo)
+	gethGroup := router.Group("geth")
+	gethGroup.Use(middleware.Auth(secretKey))
+	gethGroup.GET("avg-growth", gethHandler.AverageGrowth)
 
 	srv := &http.Server{
 		Addr:    ":8080",
@@ -38,6 +47,10 @@ func StartHttpServer(ctx context.Context, dbCon *sql.DB, secretKey string) error
 			log.WithError(err).Error("Could not gracefully shut down http server")
 		}
 	}()
+
+	// Run a job that collects samples of frequency
+	s := samplesJob.NewHeightSamplesCollector(time.Minute, samplesRepo)
+	go s.Run(ctx)
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err

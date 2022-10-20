@@ -40,11 +40,6 @@ type CreateUserResponse struct {
 	Message string `json:"message"`
 }
 
-type ErrorResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 // validateUserCredentials checks whether current request contains user credentials.
 // it only validates that the request contains all the required fields, but does not check the validity
 // of the credentials themselves
@@ -54,17 +49,17 @@ func (h AuthHandler) validateUserCredentials(c *gin.Context) (*UserCredentials, 
 	var msg string
 	if err != nil {
 		msg = "malformed request"
-		writeErrorResponse(c, http.StatusBadRequest, msg)
+		WriteErrorResponse(c, http.StatusBadRequest, msg)
 		return nil, err
 	}
 	if req.UserName == nil {
 		msg = "missing user-name"
-		writeErrorResponse(c, http.StatusBadRequest, msg)
+		WriteErrorResponse(c, http.StatusBadRequest, msg)
 		return nil, errors.New(msg)
 	}
 	if req.Password == nil {
 		msg = "missing password"
-		writeErrorResponse(c, http.StatusBadRequest, msg)
+		WriteErrorResponse(c, http.StatusBadRequest, msg)
 		return nil, errors.New(msg)
 	}
 
@@ -81,7 +76,7 @@ func (h AuthHandler) SignUp(c *gin.Context) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.WithError(err).Error("failed to generate hash for password")
-		writeErrorResponse(c, http.StatusInternalServerError, "signup has failed due to an internal error")
+		WriteErrorResponse(c, http.StatusInternalServerError, "signup has failed due to an internal error")
 		return
 	}
 
@@ -90,10 +85,10 @@ func (h AuthHandler) SignUp(c *gin.Context) {
 		log.WithError(err).Error("failed to create a user")
 
 		if errors.Is(err, db.ErrorUserAlreadyExists) {
-			writeErrorResponse(c, http.StatusBadRequest, "user already exists")
+			WriteErrorResponse(c, http.StatusBadRequest, "user already exists")
 			return
 		}
-		writeErrorResponse(c, http.StatusInternalServerError, "failed to signup a user")
+		WriteErrorResponse(c, http.StatusInternalServerError, "failed to signup a user")
 		return
 	}
 	writeCreateUserResponse(c)
@@ -101,10 +96,6 @@ func (h AuthHandler) SignUp(c *gin.Context) {
 
 func writeCreateUserResponse(c *gin.Context) {
 	c.JSON(http.StatusOK, CreateUserResponse{Code: http.StatusOK, Message: "ok"})
-}
-
-func writeErrorResponse(c *gin.Context, code int, message string) {
-	c.JSON(code, ErrorResponse{Code: code, Message: message})
 }
 
 type GenerateTokenResponse struct {
@@ -124,21 +115,21 @@ func (h AuthHandler) GenerateToken(c *gin.Context) {
 		log.WithError(err).Error("failed to retrieve a user")
 
 		if errors.Is(err, db.ErrorUserNotFound) {
-			writeErrorResponse(c, http.StatusBadRequest, "user not found")
+			WriteErrorResponse(c, http.StatusBadRequest, "user not found")
 			return
 		}
-		writeErrorResponse(c, http.StatusInternalServerError, "failed retrieve the user")
+		WriteErrorResponse(c, http.StatusInternalServerError, "failed retrieve the user")
 		return
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(*req.Password))
 	if err != nil {
-		writeErrorResponse(c, http.StatusUnauthorized, "unauthorized")
+		WriteErrorResponse(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	token, err := h.auth.GenerateToken(*req.UserName)
 	if err != nil {
-		writeErrorResponse(c, http.StatusInternalServerError, "failed to generate token")
+		WriteErrorResponse(c, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
 	writeGenerateTokenResponse(c, token)
